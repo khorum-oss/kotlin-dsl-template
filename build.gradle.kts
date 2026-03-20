@@ -19,7 +19,7 @@ extra["metaDslVersion"] = libs.versions.meta.dsl.get()
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
