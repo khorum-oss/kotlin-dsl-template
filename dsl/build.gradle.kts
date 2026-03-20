@@ -20,7 +20,7 @@ version = dslVersion
 
 dependencies {
     implementation(rootProject.libs.konstellation.meta.dsl)
-    implementation(rootProject.libs.konstellation.dsl)
+    ksp(rootProject.libs.konstellation.dsl)
     implementation(kotlin("stdlib"))
     implementation(rootProject.libs.kotlin.reflect)
     implementation(rootProject.libs.kotlinpoet)
