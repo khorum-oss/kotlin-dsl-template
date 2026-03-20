@@ -15,7 +15,7 @@ plugins {
 group = "org.khorum.oss.REPLACE_ME"
 
 extra["dslVersion"] = file("VERSION").readText().trim()
-extra["metaDslVersion"] = libs.versions.meta.dsl.get()
+extra["metaDslVersion"] = libs.versions.konstellation.meta.dsl.get()
 
 java {
     toolchain {
@@ -75,36 +75,52 @@ tasks.register("koverMergedReport") {
 
 tasks.register("initProject") {
     group = "setup"
-    description = "Replaces REPLACE_ME with projectName and REPLACE_ME_PACKAGE with projectPackageName across the template"
+    description = "Replaces REPLACE_ME, REPLACE_ME_PACKAGE, and REPLACE_ME_CAPITAL across the template"
 
     doLast {
         val projectName = project.findProperty("projectName") as? String
             ?: error("Missing required property: -PprojectName=<name>")
         val projectPackageName = project.findProperty("projectPackageName") as? String
-            ?: error("Missing required property: -PprojectPackageName=<package>")
+            ?: projectName
+        val projectCapitalName = project.findProperty("projectCapitalName") as? String
+            ?: projectPackageName.replaceFirstChar { it.uppercaseChar() }
 
-        val targetFiles = listOf(
-            rootProject.file("settings.gradle.kts"),
-            rootProject.file("build.gradle.kts"),
-            rootProject.file("README.md"),
-            rootProject.file("dsl/build.gradle.kts"),
-        )
+        val targetFiles = rootProject.projectDir.walkTopDown()
+            .filter { it.isFile }
+            .filter {
+                it.extension in listOf("kts", "kt", "md", "xml", "yaml", "yml", "properties", "toml")
+            }
+            .filter { ".gradle/" !in it.path && "/build/" !in it.path }
+            .toList()
 
         targetFiles.forEach { file ->
-            if (file.exists()) {
-                val original = file.readText()
-                val updated = original
-                    .replace("REPLACE_ME_PACKAGE", projectPackageName)
-                    .replace("REPLACE_ME", projectName)
+            val original = file.readText()
+            val updated = original
+                .replace("REPLACE_ME_CAPITAL", projectCapitalName)
+                .replace("REPLACE_ME_PACKAGE", projectPackageName)
+                .replace("REPLACE_ME", projectName)
 
-                if (updated != original) {
-                    file.writeText(updated)
-                    logger.lifecycle("Updated: ${file.relativeTo(rootProject.projectDir)}")
-                }
+            if (updated != original) {
+                file.writeText(updated)
+                logger.lifecycle("Updated: ${file.relativeTo(rootProject.projectDir)}")
             }
         }
 
-        logger.lifecycle("Project initialized: name=$projectName, package=$projectPackageName")
+        // Rename files and directories containing placeholders
+        rootProject.projectDir.walkBottomUp()
+            .filter { "REPLACE_ME" in it.name }
+            .filter { ".gradle/" !in it.path && "/build/" !in it.path }
+            .forEach { file ->
+                val newName = file.name
+                    .replace("REPLACE_ME_CAPITAL", projectCapitalName)
+                    .replace("REPLACE_ME_PACKAGE", projectPackageName)
+                    .replace("REPLACE_ME", projectName)
+                val target = file.parentFile.resolve(newName)
+                file.renameTo(target)
+                logger.lifecycle("Renamed: ${file.relativeTo(rootProject.projectDir)} -> $newName")
+            }
+
+        logger.lifecycle("Project initialized: name=$projectName, package=$projectPackageName, capitalName=$projectCapitalName")
     }
 }
 

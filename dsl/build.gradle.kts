@@ -7,8 +7,7 @@ val metaDslVersion: String by rootProject.extra
 
 plugins {
     id("io.gitlab.arturbosch.detekt")
-    `java-library`
-    `maven-publish`
+    id("com.google.devtools.ksp")
     signing
 
     id("org.khorum.oss.plugins.open.secrets")
@@ -21,6 +20,7 @@ version = dslVersion
 
 dependencies {
     implementation(rootProject.libs.konstellation.meta.dsl)
+    implementation(rootProject.libs.konstellation.dsl)
     implementation(kotlin("stdlib"))
     implementation(rootProject.libs.kotlin.reflect)
     implementation(rootProject.libs.kotlinpoet)
@@ -129,6 +129,12 @@ mavenGeneratedArtifacts {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+ksp {
+    arg("projectRootClasspath", "org.khorum.oss.REPLACE_ME_PACKAGE")
+    arg("dslBuilderClasspath", "org.khorum.oss.REPLACE_ME_PACKAGE.common")
+    arg("dslMarkerClass", "org.khorum.oss.REPLACE_ME_PACKAGE.common.REPLACE_ME_CAPITALDsl")
 }
