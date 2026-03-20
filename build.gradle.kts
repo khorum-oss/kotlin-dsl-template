@@ -73,6 +73,41 @@ tasks.register("koverMergedReport") {
     dependsOn(project(":dsl").tasks.named("koverXmlReport"))
 }
 
+tasks.register("initProject") {
+    group = "setup"
+    description = "Replaces REPLACE_ME with projectName and REPLACE_ME_PACKAGE with projectPackageName across the template"
+
+    doLast {
+        val projectName = project.findProperty("projectName") as? String
+            ?: error("Missing required property: -PprojectName=<name>")
+        val projectPackageName = project.findProperty("projectPackageName") as? String
+            ?: error("Missing required property: -PprojectPackageName=<package>")
+
+        val targetFiles = listOf(
+            rootProject.file("settings.gradle.kts"),
+            rootProject.file("build.gradle.kts"),
+            rootProject.file("README.md"),
+            rootProject.file("dsl/build.gradle.kts"),
+        )
+
+        targetFiles.forEach { file ->
+            if (file.exists()) {
+                val original = file.readText()
+                val updated = original
+                    .replace("REPLACE_ME_PACKAGE", projectPackageName)
+                    .replace("REPLACE_ME", projectName)
+
+                if (updated != original) {
+                    file.writeText(updated)
+                    logger.lifecycle("Updated: ${file.relativeTo(rootProject.projectDir)}")
+                }
+            }
+        }
+
+        logger.lifecycle("Project initialized: name=$projectName, package=$projectPackageName")
+    }
+}
+
 sonar {
     properties {
         property("sonar.projectKey", "khorum-oss_REPLACE_ME")
